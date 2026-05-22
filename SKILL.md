@@ -46,13 +46,26 @@ GitHub Token 对 REST API 完全有效（读写均正常），但对 git HTTPS �
 # 1. 创建脚本目录
 mkdir -p /home/ubuntu/scripts
 
-# 2. 保存脚本到 /home/ubuntu/scripts/fix_github_hosts.sh
+# 2. 下载脚本
+curl -sL https://raw.githubusercontent.com/SparkTech-2049/github-ip-auto-fix/main/scripts/fix_github_hosts.sh -o /home/ubuntu/scripts/fix_github_hosts.sh
+curl -sL https://raw.githubusercontent.com/SparkTech-2049/github-ip-auto-fix/main/scripts/check_and_update_github_ips.sh -o /home/ubuntu/scripts/check_and_update_github_ips.sh
+
 # 3. 设置权限
 chmod +x /home/ubuntu/scripts/fix_github_hosts.sh
+chmod +x /home/ubuntu/scripts/check_and_update_github_ips.sh
 
-# 4. 更新 crontab（每 30 分钟自动执行）
-(crontab -l 2>/dev/null | grep -v "fix_github_hosts.sh"; echo "*/30 * * * * /home/ubuntu/scripts/fix_github_hosts.sh") | crontab -
+# 4. 更新 crontab
+(crontab -l 2>/dev/null | grep -v "fix_github_hosts.sh\|check_and_update_github_ips.sh"; \
+ echo "*/30 * * * * /home/ubuntu/scripts/fix_github_hosts.sh >> /tmp/fix_github_hosts.log 2>&1"; \
+ echo "0 2 * * 0,1,3,5 /home/ubuntu/scripts/check_and_update_github_ips.sh >> /tmp/github_ip_check.log 2>&1") | crontab -
 ```
+
+### Cron 任务说明
+
+| 任务 | 时间 | 功能 |
+|------|------|------|
+| `fix_github_hosts.sh` | 每 30 分钟 | 检测并修复 hosts，确保 git push/pull 正常 |
+| `check_and_update_github_ips.sh` | 每周一三五日 02:00 | 从多个来源获取最新 IP，自动更新 IP 池 |
 
 ## 使用方法
 
