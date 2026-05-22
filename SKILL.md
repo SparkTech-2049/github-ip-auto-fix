@@ -150,13 +150,20 @@ IP_POOL=(
 )
 ```
 
-### 维护频率
+### 维护频率（自动化）
 
-| 场景 | 建议频率 |
-|------|----------|
-| 正常运行 | 每月检查一次 |
-| 大面积失效后 | 立即检查并更新 |
-| 新部署服务器 | 部署前检查一次 |
+**每周一三五日自动检查更新：**
+
+```bash
+# 添加到 crontab（每周一三五日 02:00 执行）
+0 2 * * 0,1,3,5 /home/ubuntu/scripts/check_and_update_github_ips.sh >> /tmp/github_ip_check.log 2>&1
+```
+
+**手动检查：**
+```bash
+# 立即执行一次检查
+/home/ubuntu/scripts/check_and_update_github_ips.sh
+```
 
 ### 快速诊断命令
 
