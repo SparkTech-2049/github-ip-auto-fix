@@ -106,9 +106,74 @@ git push origin main || source /home/ubuntu/scripts/fix_github_hosts.sh && push_
 - 修复日志：`/tmp/github_fix.log`
 - 查看日志：`tail -f /tmp/github_fix.log`
 
+## IP 池维护指南
+
+### 检查当前 IP 是否可用
+
+```bash
+# 测试单个 IP 的 443 端口
+timeout 3 bash -c "echo >/dev/tcp/140.82.114.4/443" && echo "✓ 可用" || echo "✗ 不可用"
+
+# 批量测试 IP 池
+for ip in 140.82.114.4 140.82.114.20 140.82.112.4 140.82.113.4 20.205.243.166; do
+    timeout 3 bash -c "echo >/dev/tcp/$ip/443" 2>/dev/null && echo "✓ $ip" || echo "✗ $ip"
+done
+```
+
+### 获取最新可用 IP
+
+```bash
+# 方法 1：通过 DNS 查询
+nslookup github.com
+dig github.com +short
+
+# 方法 2：从公共源提取
+curl -s https://hosts.gitcdn.top/hosts.txt | grep github.com
+
+# 方法 3：在线查询
+# https://www.ipaddress.com/website/github.com/
+# https://github.com.ipaddress.com/
+```
+
+### 更新 IP 池
+
+编辑脚本中的 `IP_POOL` 数组：
+
+```bash
+# /home/ubuntu/scripts/fix_github_hosts.sh
+IP_POOL=(
+    "140.82.114.4"    # 优先级 1
+    "140.82.114.20"   # 优先级 2
+    "140.82.112.4"    # 优先级 3
+    # 添加新发现的 IP：
+    # "xxx.xxx.xxx.xxx"
+)
+```
+
+### 维护频率
+
+| 场景 | 建议频率 |
+|------|----------|
+| 正常运行 | 每月检查一次 |
+| 大面积失效后 | 立即检查并更新 |
+| 新部署服务器 | 部署前检查一次 |
+
+### 快速诊断命令
+
+```bash
+# 查看当前 hosts 配置
+grep github /etc/hosts
+
+# 查看最近修复日志
+tail -20 /tmp/github_fix.log
+
+# 测试 git 连接
+git ls-remote https://github.com/octocat/Hello-World.git HEAD
+```
+
 ## 注意事项
 
-1. **IP 池维护**：GitHub IP 可能变化，需要定期检查并更新 IP 池
+1. **IP 有效期**：GitHub IP 可能在几个月后失效，建议每月检查一次
 2. **公共源依赖**：hosts.gitcdn.top 可能不可用，脚本会自动降级到 IP 池
 3. **Token 安全**：`.git-credentials` 文件包含敏感信息，注意权限设置
 4. **API 限制**：GitHub API 有频率限制，批量推送时注意控制频率
